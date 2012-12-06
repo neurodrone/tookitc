@@ -10,17 +10,17 @@ int main(void) {
 
     int i = 200 * 1000, j;
 
-    fprintf(stdout, "Program initiation.\n-------------------------------------------\n");
+    fprintf(stdout, "Program initiation...\n");
     display_proc_map();
 
     int *m = malloc(i * sizeof (*m));
-    fprintf(stdout, "\n\nOn malloc call.\n-------------------------------------------\n");
+    fprintf(stdout, "\n\nOn malloc call...\n");
     display_proc_map();
 
     for (j = 0; j < i; j++) {
         m[j] = j;
     }
-    fprintf(stdout, "\n\nOn actual allocation.\n-------------------------------------------\n");
+    fprintf(stdout, "\n\nOn actual allocation...\n");
     display_proc_map();
 
     return 0;
