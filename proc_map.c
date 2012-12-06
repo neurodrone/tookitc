@@ -71,18 +71,16 @@ void display_proc_map() {
 
 char *trim(const char *str) {
     int len = strlen(str);
-    char *trim_str, *temp_str, *ret_str;
+    char *trim_str, *ret_str;
 
     trim_str = malloc(len + 1);
     ret_str = trim_str;
-    temp_str = strdup(str);
-    while (*temp_str++) {
-        if (*temp_str != ' ')
-            *trim_str++ = *temp_str;
-    }
+    while (*str++)
+        if (*str != ' ')
+            *trim_str++ = *str;
+
     *trim_str = '\0';
     return ret_str;
-
 }
 
 char *selectText(const char *str, char start, char end) {
@@ -99,7 +97,5 @@ char *selectText(const char *str, char start, char end) {
     if (ret_str == trim_str) return NULL;
 
     *trim_str = '\0';
-
     return ret_str;
-    
 }
