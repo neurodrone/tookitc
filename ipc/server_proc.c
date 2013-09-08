@@ -61,6 +61,7 @@ int main(int argc, char *argv[]) {
             }
             sumtemp += cmbox.temp;
         }
+        printf("sumtemp: %d\n", sumtemp);
 
         if (stable) {
             printf("Temperature stabilized: %d\n", msgp.temp);

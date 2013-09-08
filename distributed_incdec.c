@@ -36,6 +36,7 @@ long get_count_from_val(struct Stat *stat);
 const char *get_parent(const char *node);
 
 int main(int argc, char *argv[]) {
+    const char *parent;
     char buf[512], *hostport = NULL;
     char incval[2], incnode[10];
     char decval[2], decnode[10];
@@ -72,18 +73,22 @@ int main(int argc, char *argv[]) {
         noexit_debug("my_zoo_create failed.\n");
     }
 
-    stat = my_zoo_get_nowatch(get_parent(incnode), buf, &buflen);
-    inc_ctr = get_count_from_val(stat) / 2; // creation and deletion are two separate changes
+    parent = get_parent(incnode);
+    stat = my_zoo_get_nowatch(parent, buf, &buflen);
+    inc_ctr = (get_count_from_val(stat) - 1) / 2; /* creation and deletion are two separate changes */
     if (inc_ctr < 0) {
         exit_debug("Increment counter failed.\n");
     }
+    free((char *)parent);
     free(stat);
 
-    stat = my_zoo_get_nowatch(get_parent(decnode), buf, &buflen);
-    dec_ctr = get_count_from_val(stat) / 2;
+    parent = get_parent(decnode);
+    stat = my_zoo_get_nowatch(parent, buf, &buflen);
+    dec_ctr = (get_count_from_val(stat) - 1) / 2;
     if (dec_ctr < 0) {
         exit_debug("Decrement counter failed.\n");
     }
+    free((char *)parent);
     free(stat);
 
     (void) stat;
@@ -123,7 +128,6 @@ my_zoo_init(char *hostport, watcher_f watcher) {
 zinit_failure:
     noexit_debug("zookeeper_init failed.\n");
     return NULL;
-
 }
 
 int
@@ -182,7 +186,7 @@ get_parent(const char *node) {
     char *str;
     ptrdiff_t diff;
 
-    if (strchr(node, '/') == strrchr(node, '/')) {
+    if (strchr(node, '/') == strrchr(node, '/')) { /* account if the node is the root node */
         return node;
     }
 
@@ -190,13 +194,11 @@ get_parent(const char *node) {
     endptr = strchr(++endptr, '/');
     diff = endptr - node;
 
-    str = malloc(diff + 1);
+    str = calloc(1, diff + 1);
     if (!str) {
-        exit_debug("malloc failed for get_parent.");
+        exit_debug("calloc failed for get_parent.");
     }
 
     memcpy(str, node, diff);
-    strcat(str, "");
-
     return str;
 }
