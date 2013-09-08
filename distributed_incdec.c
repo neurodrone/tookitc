@@ -1,6 +1,7 @@
 /**
  * @author Vaibhav Bhembre
  * @version 2013/09/07
+ * @A distributed counter using ZK.
  * gcc -Werror -Wall -pedantic distributed_incdec.c -o distributed_incdec -lzookeeper_mt
  */
 
