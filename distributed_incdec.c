@@ -98,6 +98,7 @@ int main(int argc, char *argv[]) {
     fprintf(stdout, "Current count: %ld\n", counter);
 
     zookeeper_close(zh);
+
     return 0;
 }
 
@@ -182,7 +183,7 @@ get_count_from_val(struct Stat *stat) {
 
 const char *
 get_parent(const char *node) {
-    const char *endptr;
+    const char *endptr, *tmpptr;
     char *str;
     ptrdiff_t diff;
 
@@ -191,10 +192,14 @@ get_parent(const char *node) {
     }
 
     endptr = node;
-    endptr = strchr(++endptr, '/');
+    tmpptr = endptr = strchr(++endptr, '/');
+    while (tmpptr) {
+        endptr = tmpptr;
+        tmpptr = strchr(++tmpptr, '/');
+    }
     diff = endptr - node;
 
-    str = calloc(1, diff + 1);
+    str = calloc(1, diff + 1); /* Allocate exact size for parent node name */
     if (!str) {
         exit_debug("calloc failed for get_parent.");
     }
