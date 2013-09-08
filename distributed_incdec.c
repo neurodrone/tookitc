@@ -15,7 +15,7 @@
 #define DEFAULT_HOST "127.0.0.1"
 #define DEFAULT_PORT "3181"
 
-long inc_ctr, dec_ctr;
+char incnode[10], decnode[10];
 
 typedef void (*watcher_f)(zhandle_t *zh,
              int type,
@@ -26,9 +26,17 @@ typedef void (*watcher_f)(zhandle_t *zh,
 zhandle_t *zh;
 watcher_f watcher;
 
+void initialize_zookeeper();
+void increment_counter();
+void decrement_counter();
+long get_increment();
+long get_decrement();
+long get_count();
+long get_node_count();
 zhandle_t *my_zoo_init(char *hostport, watcher_f watcher);
 int my_zoo_create(const char *node, const char *val, char *buffer, int buflen);
-struct Stat *my_zoo_get_nowatch(const char *node, char *buffer, int *buflen);
+int my_zoo_createi(const char *node, const char *val, int vallen, char *buffer, int buflen, int flags);
+void my_zoo_get_nowatch(const char *node, char *buffer, int *buflen, struct Stat *stat);
 char *my_strdup(const char *str);
 void noexit_debug(const char *msg);
 void exit_debug(const char *msg);
@@ -36,90 +44,169 @@ long get_count_from_val(struct Stat *stat);
 const char *get_parent(const char *node);
 
 int main(int argc, char *argv[]) {
-    const char *parent;
-    char buf[512], *hostport = NULL;
-    char incval[2], incnode[10];
-    char decval[2], decnode[10];
-    int rc = 0, buflen, incdec = 0;
     long counter;
-    struct Stat *stat;
-
-    zoo_set_debug_level(ZOO_LOG_LEVEL_INFO);
+    long incdec = 0;
 
     if (argc == 2) {
         incdec = atoi(argv[1]);
     }
 
-    zh = my_zoo_init(hostport, watcher);
-    free(hostport);
-    if (!zh) {
-        return 1;
-    }
-
     strcpy(incnode, "/inc/inc");
-    strcpy(incval, "");
-
     strcpy(decnode, "/dec/dec");
-    strcpy(decval, "");
 
-    if (incdec >= 0) {
-        rc |= my_zoo_create(incnode, incval, buf, sizeof (buf) - 1);
-    }
-    if (incdec <= 0) {
-        rc |= my_zoo_create(decnode, decval, buf, sizeof (buf) - 1);
+    initialize_zookeeper();
+
+    if (incdec > 0) {
+        increment_counter();
     }
 
+    if (incdec < 0) {
+        decrement_counter();
+    }
+
+    counter = get_count();
+    fprintf(stdout, "Current count: %ld\n", counter);
+
+    exit_debug("");
+    return 0;
+}
+
+void
+increment_counter() {
+    char buf[512];
+    int rc;
+    rc = my_zoo_create(incnode, "1", buf, sizeof (buf) - 1);
     if (rc != ZOK) {
-        noexit_debug("my_zoo_create failed.\n");
+        noexit_debug("Failed to increment counter.");
+    }
+}
+
+void
+decrement_counter() {
+    char buf[512];
+    int rc;
+    rc = my_zoo_create(decnode, "1", buf, sizeof (buf) - 1);
+    if (rc != ZOK) {
+        noexit_debug("Failed to decrement counter.");
+    }
+}
+
+long
+get_increment() {
+    const char *parent;
+    long inc_ctr;
+
+    parent = get_parent(incnode);
+    inc_ctr = get_node_count(parent);
+    if (inc_ctr < 0) {
+        exit_debug("Increment counter failed.");
+    }
+    inc_ctr = (inc_ctr - 1) / 2; /* creation and deletion are two separate changes */
+    free((char *)parent);
+
+    return inc_ctr;
+}
+
+long
+get_decrement() {
+    const char *parent;
+    long dec_ctr;
+
+    parent = get_parent(decnode);
+    dec_ctr = get_node_count(parent);
+    if (dec_ctr < 0) {
+        exit_debug("Decrement counter failed.");
+    }
+    dec_ctr = (dec_ctr - 1) / 2; /* creation and deletion are two separate changes */
+    free((char *)parent);
+
+    return dec_ctr;
+}
+
+long
+get_node_count(const char *node) {
+    int ctr, buflen = 2;
+    struct Stat stat;
+    char buf[buflen];
+
+    my_zoo_get_nowatch(node, buf, &buflen, &stat);
+    ctr = get_count_from_val(&stat);
+
+    return ctr;
+}
+
+long
+get_count() {
+    long inc, dec;
+    inc = get_increment();
+    dec = get_decrement();
+
+    return inc - dec;
+}
+
+int
+znode_exists(const char *node) {
+    int rc;
+    struct Stat *stat = malloc(sizeof (*stat));
+    rc = zoo_exists(zh, node, 0, stat);
+
+    free(stat);
+    return rc != ZNONODE;
+}
+
+void
+initialize_zookeeper() {
+    const char *parent;
+    char buf[512];
+    int rc;
+    zoo_set_debug_level(ZOO_LOG_LEVEL_ERROR);
+
+    zh = my_zoo_init(NULL, watcher); /* extend this to connect to non-default servers */
+    if (!zh) {
+        exit_debug("Unable to initialize zookeeper.");
     }
 
     parent = get_parent(incnode);
-    stat = my_zoo_get_nowatch(parent, buf, &buflen);
-    inc_ctr = (get_count_from_val(stat) - 1) / 2; /* creation and deletion are two separate changes */
-    if (inc_ctr < 0) {
-        exit_debug("Increment counter failed.\n");
+    if (!znode_exists(parent)) {
+        rc = my_zoo_createi(parent, "1", 1, buf, sizeof (buf) - 1, 0);
+        if (rc != ZOK) {
+            noexit_debug("znode exists failed for incnode parent.");
+        }
     }
     free((char *)parent);
-    free(stat);
 
     parent = get_parent(decnode);
-    stat = my_zoo_get_nowatch(parent, buf, &buflen);
-    dec_ctr = (get_count_from_val(stat) - 1) / 2;
-    if (dec_ctr < 0) {
-        exit_debug("Decrement counter failed.\n");
+    if (!znode_exists(parent)) {
+        rc = my_zoo_createi(parent, "1", 1, buf, sizeof (buf) - 1, 0);
+        if (rc != ZOK) {
+            noexit_debug("znode exists failed for decnode parent.");
+        }
     }
     free((char *)parent);
-    free(stat);
-
-    (void) stat;
-    (void) buflen;
-
-    counter = inc_ctr - dec_ctr;
-    fprintf(stdout, "Current count: %ld\n", counter);
-
-    zookeeper_close(zh);
-
-    return 0;
 }
 
 zhandle_t *
 my_zoo_init(char *hostport, watcher_f watcher) {
     zhandle_t *zh;
+    char *hp;
     if (hostport == NULL) {
         char *host = my_strdup(DEFAULT_HOST);
         char *port = my_strdup(DEFAULT_PORT);
-        hostport = malloc(strlen(host) + strlen(port) + 2);
-        if (!hostport) {
+        hp = malloc(strlen(host) + strlen(port) + 2);
+        if (!hp) {
             goto zinit_failure;
         }
-        sprintf(hostport, "%s:%s", host, port);
+        sprintf(hp, "%s:%s", host, port);
         free(host); free(port);
+    } else {
+        hp = my_strdup(hostport);
     }
-    fprintf(stdout, "Connecting to '%s'\n", hostport);
-    zh = zookeeper_init(hostport,
+    fprintf(stdout, "Connecting to '%s'\n", hp);
+    zh = zookeeper_init(hp,
                         watcher,
                         10 * 1000,
                         0, 0, 0);
+    free(hp);
     if (!zh) {
         goto zinit_failure;
     }
@@ -127,8 +214,8 @@ my_zoo_init(char *hostport, watcher_f watcher) {
     return zh;
 
 zinit_failure:
-    noexit_debug("zookeeper_init failed.\n");
-    return NULL;
+    noexit_debug("zookeeper_init failed.");
+    return zh;
 }
 
 int
@@ -137,22 +224,30 @@ my_zoo_create(const char *node,
               char *buffer,
               int buflen) {
     int vallen = strlen(val);
-    return zoo_create(zh, node, val, vallen, &ZOO_OPEN_ACL_UNSAFE, ZOO_SEQUENCE | ZOO_EPHEMERAL, buffer, buflen);
+    return my_zoo_createi(node, val, vallen, buffer, buflen, ZOO_SEQUENCE | ZOO_EPHEMERAL);
 }
 
-struct Stat *
+int
+my_zoo_createi(const char *node,
+               const char *val,
+               int vallen,
+               char *buffer,
+               int buflen,
+               int flags) {
+    return zoo_create(zh, node, val, vallen, &ZOO_OPEN_ACL_UNSAFE, flags, buffer, buflen);
+}
+
+void
 my_zoo_get_nowatch(const char *node,
                    char *buffer,
-                   int *buflen) {
-    struct Stat *stat = malloc(sizeof (*stat));
-    int rc = zoo_get(zh, node, 0, buffer, buflen, stat);
-    if (rc != ZOK || !stat) {
-        return NULL;
+                   int *buflen,
+                   struct Stat *stat) {
+    int rc;
+    rc = zoo_get(zh, node, 0, buffer, buflen, stat);
+    if (rc != ZOK) {
+        noexit_debug("zoo_get did not return ZOK, please examine.");
     }
-    return stat;
 }
-
-          
 
 char *
 my_strdup(const char *str) {
@@ -169,7 +264,10 @@ void noexit_debug(const char *msg) {
 }
 
 void exit_debug(const char *msg) {
-    fprintf(stderr, "Error[%d]: %s\n", errno, msg);
+    if (strlen(msg)) {
+        fprintf(stderr, "Error[%d]: %s\n", errno, msg);
+    }
+    zookeeper_close(zh);
     exit(errno);
 }
 
