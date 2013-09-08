@@ -1,7 +1,7 @@
 /**
  * @author Vaibhav Bhembre
  * @version 2013/09/07
- * gcc -Werror -Wall -pedantic distributed_incrementor.c -o distributed_incrementor -lzookeeper_mt
+ * gcc -Werror -Wall -pedantic distributed_incdec.c -o distributed_incdec -lzookeeper_mt
  */
 
 #include <stdio.h>
@@ -73,14 +73,14 @@ int main(int argc, char *argv[]) {
     }
 
     stat = my_zoo_get_nowatch(get_parent(incnode), buf, &buflen);
-    inc_ctr = get_count_from_val(stat);
+    inc_ctr = get_count_from_val(stat) / 2; // creation and deletion are two separate changes
     if (inc_ctr < 0) {
         exit_debug("Increment counter failed.\n");
     }
     free(stat);
 
     stat = my_zoo_get_nowatch(get_parent(decnode), buf, &buflen);
-    dec_ctr = get_count_from_val(stat);
+    dec_ctr = get_count_from_val(stat) / 2;
     if (dec_ctr < 0) {
         exit_debug("Decrement counter failed.\n");
     }
@@ -173,28 +173,29 @@ get_count_from_val(struct Stat *stat) {
     if (!stat) {
         return -1;
     }
-    printf("cversion: %d\n", stat->cversion);
     return stat->cversion;
 }
 
 const char *
 get_parent(const char *node) {
-    char *endptr, *str;
-    ptrdiff_t dist;
+    const char *endptr;
+    char *str;
+    ptrdiff_t diff;
 
     if (strchr(node, '/') == strrchr(node, '/')) {
         return node;
     }
 
-    endptr = strchr(node + 1, '/');
-    dist = endptr - node;
+    endptr = node;
+    endptr = strchr(++endptr, '/');
+    diff = endptr - node;
 
-    str = malloc(dist + 1);
+    str = malloc(diff + 1);
     if (!str) {
         exit_debug("malloc failed for get_parent.");
     }
 
-    memcpy(str, node, dist);
+    memcpy(str, node, diff);
     strcat(str, "");
 
     return str;
