@@ -1,7 +1,7 @@
 /**
  * @author Vaibhav Bhembre
  * @version 2013/09/07
- * @A distributed counter using ZK.
+ * @description A distributed highly-consistent counter using ZK.
  * gcc -Werror -Wall -pedantic distributed_incdec.c -o distributed_incdec -lzookeeper_mt
  */
 
@@ -261,12 +261,12 @@ my_strdup(const char *str) {
 }
 
 void noexit_debug(const char *msg) {
-    fprintf(stderr, "Error[%d]: %s\n", errno, msg);
+    fprintf(stderr, "%s:%d: Error[%d]: %s\n", __FILE__, __LINE__, errno, msg);
 }
 
 void exit_debug(const char *msg) {
     if (strlen(msg)) {
-        fprintf(stderr, "Error[%d]: %s\n", errno, msg);
+        fprintf(stderr, "%s:%d: Error[%d]: %s\n", __FILE__, __LINE__, errno, msg);
     }
     zookeeper_close(zh);
     exit(errno);
