@@ -22,11 +22,11 @@ int main(int argc, char *argv[]) {
     struct addrinfo hint, *res, *p;
     char *port = NULL, file[20];
     struct stat statbuf;
-    off_t off;
+    off_t off, valres;
     
     if (argc == 2) {
         if (atoi(argv[1]) > 0) {
-            port = argv[1];
+            port = strdup(argv[1]);
         }
     }
 
@@ -85,9 +85,13 @@ int main(int argc, char *argv[]) {
 
         fstat(f, &statbuf);
         
-        off = 0;
-        r = sendfile(f, fd, off, &statbuf.st_size, NULL, 0);
+        off = 0; valres = statbuf.st_size;
+        r = sendfile(f, fd, off, &valres, NULL, 0);
         assert(r >= 0);
+
+        /* This parameter is apparently reset and denotes
+           how many bytes were actually sent. */
+        assert(valres == statbuf.st_size);
 
         close(f);
         close(fd);
