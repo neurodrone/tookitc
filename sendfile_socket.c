@@ -20,16 +20,18 @@
 int main(int argc, char *argv[]) {
     int r, sockfd, fd, f;
     struct addrinfo hint, *res, *p;
-    char *port, file[20];
+    char *port = NULL, file[20];
     struct stat statbuf;
     off_t off;
     
     if (argc == 2) {
         if (atoi(argv[1]) > 0) {
             port = argv[1];
-        } else {
-            port = strdup(DEFAULT_PORT);
         }
+    }
+
+    if (port == NULL) {
+        port = strdup(DEFAULT_PORT);
     }
 
     memset(&hint, 0, sizeof (hint));
@@ -86,8 +88,6 @@ int main(int argc, char *argv[]) {
         off = 0;
         r = sendfile(f, fd, off, &statbuf.st_size, NULL, 0);
         assert(r >= 0);
-
-        assert(r == statbuf.st_size);
 
         close(f);
         close(fd);
