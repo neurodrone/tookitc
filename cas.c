@@ -18,7 +18,10 @@ int main(int argc, char *argv[]) {
 
     printf("Value at `p`: %d\n", *p);
     ret = _cas(p, oldValue, newValue);
-    printf("Value at `p`: %d\n", *p);
+    printf("Value at `p`: %d #bool: %s\n", *p, ret ? "true" : "false");
+
+    ret = _cas(p, oldValue, newValue);
+    printf("Value at `p`: %d #bool: %s\n", *p, ret ? "true" : "false");
 
     return 0;
 }
@@ -33,4 +36,11 @@ bool _cas(int *p, int oldValue, int newValue) {
             : "memory", "cc");
     return res;
 }
+
+/* Output: 
+ *
+ *  Value at `p`: 5
+ *  Value at `p`: 10 #bool: true
+ *  Value at `p`: 10 #bool: false
+*/
 
