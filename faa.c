@@ -16,6 +16,10 @@ int main(int argc, char *argv[]) {
     oldValue = _faa(p, incr);
     printf("OldValue at `p`: %d, Value at `p`: %d\n", oldValue, *p);
 
+    int decr = -10;
+    oldValue = _faa(p, decr);
+    printf("OldValue at `p`: %d, Value at `p`: %d\n", oldValue, *p);
+
     return 0;
 }
 
@@ -32,5 +36,6 @@ int _faa(int *p, int incr) {
  *
  *  Value at `p`: 5
  *  OldValue at `p`: 5, Value at `p`: 15
+ *  OldValue at `p`: 15, Value at `p`: 5
 */
 
