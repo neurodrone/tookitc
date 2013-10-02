@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
     d = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
                          atoi(argv[1]),
                          NULL, NULL, &handler, PAGE,
-                         MHD_OPTION_CONNECTION_TIMEOUT, 120,
+                         MHD_OPTION_CONNECTION_TIMEOUT, 30,
                          MHD_OPTION_END);
 
     if (d == NULL) {
