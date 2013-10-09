@@ -5,7 +5,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdint.h>
+
+static int val[4];
 
 void get_cpuid(int val[static 4], uint32_t in) {
     /* Compiling with Clang enforces the array size to be 4 here.
@@ -23,12 +26,22 @@ void get_cpuid(int val[static 4], uint32_t in) {
 }
 
 void get_cpu_addrsize(uint8_t pl[static 2]) {
-    int val[4] = { 0 };
-
     get_cpuid(val, 0x80000008);
 
     pl[0] = val[0] & 0xFF;
     pl[1] = (val[0] >> 8) & 0xFF;
+}
+
+void get_cpu_brand(char **brand) {
+    get_cpuid(val, 0);
+
+    __asm__ __volatile__ (
+            "xchgl %0, %1"
+            : "=a" (val[2]), "=b" (val[3])
+            : "0" (val[2]), "1" (val[3])
+    );
+
+    *brand = (char *) &val[1];
 }
 
 int main(int argc, char *argv[]) {
@@ -37,6 +50,11 @@ int main(int argc, char *argv[]) {
 
     printf("Physical address: %u\n", pl[0]);
     printf("Linear address: %u\n", pl[1]);
+
+    char *brand;
+    get_cpu_brand(&brand);
+
+    printf("CPU: %s\n", brand);
 
     return 0;
 }
