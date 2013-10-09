@@ -16,6 +16,7 @@ enum {
     EDX,
     ELEN
 };
+
 static int val[ELEN];
 
 void get_cpuid(int val[static ELEN], uint32_t in) {
