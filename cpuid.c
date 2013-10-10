@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <limits.h>
 
 enum {
     EAX,
@@ -15,6 +16,12 @@ enum {
     ECX,
     EDX,
     ELEN
+};
+
+enum {
+    PHY,
+    LIN,
+    PLSIZE
 };
 
 static int val[ELEN];
@@ -34,11 +41,11 @@ void get_cpuid(int val[static ELEN], uint32_t in) {
             : "memory");
 }
 
-void get_cpu_addrsize(uint8_t pl[static 2]) {
+void get_cpu_addrsize(uint8_t pl[static PLSIZE]) {
     get_cpuid(val, 0x80000008);
 
-    pl[0] = val[EAX] & 0xFF;
-    pl[1] = (val[EAX] >> 8) & 0xFF;
+    pl[PHY] = val[EAX] & 0xFF;
+    pl[LIN] = (val[EAX] >> CHAR_BIT) & 0xFF;
 }
 
 void get_cpu_brand(char **brand) {
@@ -62,7 +69,7 @@ bool has_aes() {
 }
 
 int main(int argc, char *argv[]) {
-    uint8_t pl[2];
+    uint8_t pl[PLSIZE];
     get_cpu_addrsize(pl);
 
     printf("Physical address: %u\n", pl[0]);
