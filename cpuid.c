@@ -72,12 +72,11 @@ int main(int argc, char *argv[]) {
     uint8_t pl[PLSIZE];
     get_cpu_addrsize(pl);
 
-    printf("Physical address: %u\n", pl[0]);
-    printf("Linear address: %u\n", pl[1]);
+    printf("Physical address: %u\n", pl[PHY]);
+    printf("Linear address: %u\n", pl[LIN]);
 
     char *brand;
     get_cpu_brand(&brand);
-
     printf("CPU: %s\n", brand);
 
     printf("AES NativeIns: %s\n", (has_aes() ? "ENABLED" : "DISABLED"));
