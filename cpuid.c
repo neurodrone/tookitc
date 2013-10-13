@@ -10,6 +10,8 @@
 #include <stdint.h>
 #include <limits.h>
 
+#define AES_BIT 25
+
 enum {
     EAX,
     EBX,
@@ -42,7 +44,7 @@ void get_cpuid(int val[static ELEN], uint32_t in) {
 }
 
 void get_cpu_addrsize(uint8_t pl[static PLSIZE]) {
-    get_cpuid(val, 0x80000008);
+    get_cpuid(val, (1 << 31) | (1 << 3));
 
     pl[PHY] = val[EAX] & 0xFF;
     pl[LIN] = (val[EAX] >> CHAR_BIT) & 0xFF;
@@ -64,7 +66,7 @@ void get_cpu_brand(char **brand) {
 bool has_aes() {
     get_cpuid(val, 1);
 
-    return val[ECX] & (1 << 25);
+    return val[ECX] & (1 << AES_BIT);
     /* Bit reference from http://intel.ly/17VZqYA (Pg. 3-168)*/
 }
 
