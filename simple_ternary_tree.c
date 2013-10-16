@@ -54,7 +54,7 @@ bool search(struct Node *root, char *word) {
     } else if (*word > root->data) {
         search(root->r, word);
     } else {
-        if (!*(word + 1)) {
+        if (*(word + 1) == '\0') {
             return root->string;
         }
         return search(root->c, word + 1);
