@@ -4,6 +4,7 @@
  * gcc instrument_function.c -o instrument_function -finstrument-functions
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
