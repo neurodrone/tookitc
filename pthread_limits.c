@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-pthread_attr_t pat;
+static pthread_attr_t pat;
 
 int main(int argc, char *argv[]) {
     size_t size;
