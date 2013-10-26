@@ -1,6 +1,7 @@
 /**
  * @author Vaibhav Bhembre
  * @version 2013/09/28
+ * gcc version.c -o version -std=c99
  */
 
 #include <stdio.h>

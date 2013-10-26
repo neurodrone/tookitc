@@ -39,8 +39,6 @@ int main(int argc, char *argv[]) {
     int rc, buflen;
     struct Stat *stat;
 
-    zoo_set_debug_level(ZOO_LOG_LEVEL_DEBUG);
-
     if (argc == 3) {
         hostport = malloc(strlen(argv[1]) + strlen(argv[2]) + 2);
         if (hostport == NULL) {

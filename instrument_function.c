@@ -4,13 +4,34 @@
  * gcc instrument_function.c -o instrument_function -finstrument-functions
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <dlfcn.h>
 #include <time.h>
 
 void profile_func_enter(void *this_fn, void *call_site)__attribute__((no_instrument_function));
 void profile_func_exit(void *this_fn, void *call_site)__attribute__((no_instrument_function));
+int stack_trace_crash(void);
+
+void stack_trace_sighandler(int sig, siginfo_t *info, void *f) {
+	kill(getpid(), sig);
+	abort();
+}
+
+int stack_trace_crash(void) {
+	struct sigaction act;
+	sigemptyset(&act.sa_mask);
+
+	act.sa_flags = SA_NODEFER | SA_ONSTACK | SA_SIGINFO;
+	act.sa_sigaction = stack_trace_sighandler;
+	sigaction(SIGABRT, &act, NULL);
+	sigaction(SIGBUS, &act, NULL);
+	sigaction(SIGSEGV, &act, NULL);
+
+	return 0;
+}
 
 void profile_func_enter(void *this_fn, void *call_site) {
     Dl_info dl_info;
