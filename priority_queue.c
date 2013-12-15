@@ -132,6 +132,8 @@ int main(int argc, char *argv[]) {
     printf("%d\n", heap_poll(heap));
     printf("%d\n", heap_poll(heap));
     printf("%d\n", heap_poll(heap));
+
+    free_heap(heap);
     return 0;
 }
 
